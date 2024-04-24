@@ -7,6 +7,7 @@ import { authApi } from "@/api/authApi";
 import { toast } from "react-toastify";
 import useStore from "@/store";
 import { IUser } from "@/api/types";
+import { showAxiosError } from "@/shared/utils/show-axios-error";
 
 const styles = {
   heading3: `text-xl font-semibold text-gray-900 p-4 border-b`,
@@ -38,8 +39,10 @@ const TwoFactorAuth: FC<TwoFactorAuthProps> = ({
   user_id,
   closeModal,
 }) => {
+  const setAuthUser = useStore((state) => state.setAuthUser);
+  const setRequestLoading = useStore((state) => state.setRequestLoading);
+
   const [qrcodeUrl, setqrCodeUrl] = useState("");
-  const store = useStore();
 
   const {
     handleSubmit,
@@ -52,7 +55,7 @@ const TwoFactorAuth: FC<TwoFactorAuthProps> = ({
 
   const verifyOtp = async (token: string) => {
     try {
-      store.setRequestLoading(true);
+      setRequestLoading(true);
       const {
         data: { user },
       } = await authApi.post<{ otp_verified: string; user: IUser }>(
@@ -62,25 +65,16 @@ const TwoFactorAuth: FC<TwoFactorAuthProps> = ({
           user_id,
         }
       );
-      store.setRequestLoading(false);
-      store.setAuthUser(user);
+      setRequestLoading(false);
+      setAuthUser(user);
       closeModal();
       toast.success("Two-Factor Auth Enabled Successfully", {
         position: "top-right",
       });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
-      store.setRequestLoading(false);
-      const resMessage =
-        (error.response &&
-          error.response.data &&
-          error.response.data.message) ||
-        error.response.data.detail ||
-        error.message ||
-        error.toString();
-      toast.error(resMessage, {
-        position: "top-right",
-      });
+    } catch (error) {
+      setRequestLoading(false);
+
+      showAxiosError(error);
     }
   };
 
@@ -90,7 +84,7 @@ const TwoFactorAuth: FC<TwoFactorAuthProps> = ({
 
   useEffect(() => {
     QRCode.toDataURL(otpauth_url).then(setqrCodeUrl);
-  }, []);
+  }, [otpauth_url]);
 
   useEffect(() => {
     setFocus("token");

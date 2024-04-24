@@ -6,9 +6,10 @@ import FormInput from "@/components/FormInput";
 import { LoadingButton } from "@/components/LoadingButton";
 import { toast } from "react-toastify";
 import { Link, useNavigate } from "react-router-dom";
-import { authApi } from "@/api/authApi";
+import { axiosMockInstance } from "@/api/authApi";
 import useStore from "@/store";
 import { GenericResponse } from "@/api/types";
+import { showAxiosError } from "@/shared/utils/show-axios-error";
 
 const registerSchema = object({
   name: string().min(1, "Full name is required").max(100),
@@ -29,7 +30,9 @@ export type RegisterInput = TypeOf<typeof registerSchema>;
 
 const RegisterPage = () => {
   const navigate = useNavigate();
-  const store = useStore();
+
+  const requestLoading = useStore((state) => state.requestLoading);
+  const setRequestLoading = useStore((state) => state.setRequestLoading);
 
   const methods = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
@@ -50,29 +53,20 @@ const RegisterPage = () => {
 
   const registerUser = async (data: RegisterInput) => {
     try {
-      store.setRequestLoading(true);
-      const response = await authApi.post<GenericResponse>(
+      setRequestLoading(true);
+      const response = await axiosMockInstance.post<GenericResponse>(
         "auth/register",
         data
       );
       toast.success(response.data.message, {
         position: "top-right",
       });
-      store.setRequestLoading(false);
+      setRequestLoading(false);
       navigate("/login");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
-      store.setRequestLoading(false);
-      const resMessage =
-        (error.response &&
-          error.response.data &&
-          error.response.data.message) ||
-        error.response.data.detail ||
-        error.message ||
-        error.toString();
-      toast.error(resMessage, {
-        position: "top-right",
-      });
+    } catch (error) {
+      setRequestLoading(false);
+
+      showAxiosError(error);
     }
   };
 
@@ -109,7 +103,7 @@ const RegisterPage = () => {
               </Link>
             </span>
             <LoadingButton
-              loading={store.requestLoading}
+              loading={requestLoading}
               textColor="text-ct-blue-600"
             >
               Sign Up

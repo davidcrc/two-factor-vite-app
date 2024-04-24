@@ -1,14 +1,14 @@
 import { object, string, TypeOf } from "zod";
-import { useEffect } from "react";
+import { useState } from "react";
 import { useForm, FormProvider, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import FormInput from "@/components/FormInput";
 import { LoadingButton } from "@/components/LoadingButton";
-import { toast } from "react-toastify";
 import { Link, useNavigate } from "react-router-dom";
 import useStore from "@/store";
 import { authApi } from "@/api/authApi";
 import { ILoginResponse } from "@/api/types";
+import { showAxiosError } from "@/shared/utils/show-axios-error";
 
 const loginSchema = object({
   email: string()
@@ -24,57 +24,57 @@ export type LoginInput = TypeOf<typeof loginSchema>;
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const setAuthUser = useStore((state) => state.setAuthUser);
+  // const requestLoading = useStore((state) => state.requestLoading);
+  // const setRequestLoading = useStore((state) => state.setRequestLoading);
 
   const methods = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
   });
 
-  const store = useStore();
-
   const {
     reset,
     handleSubmit,
-    formState: { isSubmitSuccessful },
+    // formState: { isSubmitSuccessful },
   } = methods;
 
-  useEffect(() => {
-    if (isSubmitSuccessful) {
-      reset();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSubmitSuccessful]);
+  // useEffect(() => {
+  //   if (isSubmitSuccessful) {
+  //     reset();
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [isSubmitSuccessful]);
 
   const loginUser = async (data: LoginInput) => {
     try {
-      store.setRequestLoading(true);
+      // setRequestLoading(true);
+      setLoading(true);
 
-      const {
-        data: { user },
-      } = await authApi.post<ILoginResponse>("/auth/login", data);
+      // const {
+      //   data: { user },
+      // } = await authApi.post<ILoginResponse>("/auth/login", data);
+      const user = {
+        id: "1",
+        name: "John Doe",
+        email: "user@example.com",
+        otp_enabled: "false",
+      };
 
-      store.setRequestLoading(false);
-      store.setAuthUser(user);
-
+      reset({});
+      setLoading(false);
+      setAuthUser(user);
+      console.log("user", user);
       if (user.otp_enabled) {
         navigate("/login/validateOtp");
       } else {
-        navigate("/profile");
+        console.log("else otp");
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
-      store.setRequestLoading(false);
+    } catch (error) {
+      console.log("error", error);
 
-      const resMessage =
-        (error.response &&
-          error.response.data &&
-          error.response.data.message) ||
-        error.response.data.detail ||
-        error.message ||
-        error.toString();
-
-      toast.error(resMessage, {
-        position: "top-right",
-      });
+      setLoading(false);
+      showAxiosError(error);
     }
   };
 
@@ -83,14 +83,12 @@ const LoginPage = () => {
   };
 
   return (
-    <section className="bg-ct-blue-600 min-h-screen grid place-items-center">
+    <section className="bg-violet-900 min-h-screen grid place-items-center">
       <div className="w-full">
         <h1 className="text-4xl lg:text-6xl text-center font-[600] text-ct-yellow-600 mb-4">
           Welcome Back
         </h1>
-        <h2 className="text-lg text-center mb-4 text-ct-dark-200">
-          Login to have access
-        </h2>
+
         <FormProvider {...methods}>
           <form
             onSubmit={handleSubmit(onSubmitHandler)}
@@ -105,8 +103,9 @@ const LoginPage = () => {
               </Link>
             </div>
             <LoadingButton
-              loading={store.requestLoading}
-              textColor="text-ct-blue-600"
+              loading={loading}
+              textColor="text-violet-600"
+              onClick={handleSubmit(onSubmitHandler)}
             >
               Login
             </LoadingButton>

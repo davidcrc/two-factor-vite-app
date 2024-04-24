@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LoadingButton } from "@/components/LoadingButton";
-import { toast } from "react-toastify";
+import { showAxiosError } from "@/shared/utils/show-axios-error";
 import { Link, useNavigate } from "react-router-dom";
 import useStore from "@/store";
 import { authApi } from "@/api/authApi";
@@ -20,7 +20,10 @@ export type Validate2faInput = TypeOf<typeof validate2faSchema>;
 
 const Validate2faPage = () => {
   const navigate = useNavigate();
-  const store = useStore();
+
+  const authUser = useStore((state) => state.authUser);
+  const requestLoading = useStore((state) => state.requestLoading);
+  const setRequestLoading = useStore((state) => state.setRequestLoading);
 
   const {
     handleSubmit,
@@ -33,32 +36,23 @@ const Validate2faPage = () => {
 
   const validate2fa = async (token: string) => {
     try {
-      store.setRequestLoading(true);
+      setRequestLoading(true);
       const {
         data: { otp_valid },
       } = await authApi.post<{ otp_valid: boolean }>("/auth/otp/validate", {
         token,
-        user_id: store.authUser?.id,
+        user_id: authUser?.id,
       });
-      store.setRequestLoading(false);
+      setRequestLoading(false);
       if (otp_valid) {
         navigate("/profile");
       } else {
         navigate("/login");
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
-      store.setRequestLoading(false);
-      const resMessage =
-        (error.response &&
-          error.response.data &&
-          error.response.data.message) ||
-        error.response.data.detail ||
-        error.message ||
-        error.toString();
-      toast.error(resMessage, {
-        position: "top-right",
-      });
+    } catch (error) {
+      setRequestLoading(false);
+
+      showAxiosError(error);
     }
   };
 
@@ -71,10 +65,10 @@ const Validate2faPage = () => {
   }, [setFocus]);
 
   useEffect(() => {
-    if (!store.authUser) {
+    if (!authUser) {
       navigate("/login");
     }
-  }, [navigate, store.authUser]);
+  }, [navigate, authUser]);
 
   return (
     <section className="bg-ct-blue-600 min-h-screen grid place-items-center">
@@ -105,10 +99,7 @@ const Validate2faPage = () => {
             {errors.token ? errors.token.message : null}
           </p>
 
-          <LoadingButton
-            loading={store.requestLoading}
-            textColor="text-ct-blue-600"
-          >
+          <LoadingButton loading={requestLoading} textColor="text-ct-blue-600">
             Authenticate
           </LoadingButton>
           <span className="block text-center">

@@ -7,12 +7,14 @@ type LoadingButtonProps = {
   btnColor?: string;
   textColor?: string;
   children: React.ReactNode;
+  onClick?: () => void;
 };
 
 export const LoadingButton: React.FC<LoadingButtonProps> = ({
+  children,
+  onClick,
   textColor = "text-white",
   btnColor = "bg-ct-yellow-600",
-  children,
   loading = false,
 }) => {
   return (
@@ -22,6 +24,7 @@ export const LoadingButton: React.FC<LoadingButtonProps> = ({
         `w-full py-3 font-semibold rounded-lg outline-none border-none flex justify-center`,
         `${btnColor} ${loading && "bg-[#ccc]"}`
       )}
+      onClick={onClick}
     >
       {loading ? (
         <div className="flex items-center gap-3">

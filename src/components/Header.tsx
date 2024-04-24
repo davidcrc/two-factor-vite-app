@@ -3,8 +3,8 @@ import useStore from "@/store";
 import Spinner from "./Spinner";
 
 const Header = () => {
-  const store = useStore();
-  const user = store.authUser;
+  const user = useStore((state) => state.authUser);
+  const requestLoading = useStore((state) => state.requestLoading);
 
   const handleLogout = () => {
     window.location.reload();
@@ -55,7 +55,7 @@ const Header = () => {
         </nav>
       </header>
       <div className="pt-4 pl-2 bg-ct-blue-600 fixed">
-        {store.requestLoading && <Spinner color="text-ct-yellow-600" />}
+        {requestLoading && <Spinner color="text-ct-yellow-600" />}
       </div>
     </>
   );
